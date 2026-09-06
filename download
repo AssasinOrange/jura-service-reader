@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.jura
+*.csv
+*.summary.json
+.DS_Store
+.idea/
+.vscode/
+build/
+dist/
