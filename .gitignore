@@ -3,6 +3,8 @@ __pycache__/
 *.jura
 *.csv
 *.summary.json
+*-rt-map.bin
+*-rt-replies.json
 .DS_Store
 .idea/
 .vscode/
