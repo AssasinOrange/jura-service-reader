@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string.h>
 
 namespace JuraProtocol {
 
@@ -32,7 +33,8 @@ inline int8_t hexNibble(char value) {
 }
 
 inline bool parseRtLine(const char *line, uint8_t output[32]) {
-  if (!line || line[0] != 'r' || line[1] != 't' || line[2] != ':') return false;
+  // Check the complete length before indexing a possibly truncated string.
+  if (!line || strlen(line) != 69 || strncmp(line, "rt:", 3) != 0) return false;
   for (uint8_t index = 0; index < 32; ++index) {
     const int8_t high = hexNibble(line[3 + index * 2]);
     const int8_t low = hexNibble(line[4 + index * 2]);
