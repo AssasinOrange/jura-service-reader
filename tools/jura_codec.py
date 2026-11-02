@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import binascii
+
 
 def encode_byte(value: int) -> bytes:
     if not 0 <= value <= 0xFF:
@@ -48,8 +50,9 @@ def parse_rt_line(line: bytes) -> bytes:
     if len(encoded) != 64:
         raise ValueError("expected 64 hexadecimal characters")
     try:
-        return bytes.fromhex(encoded.decode("ascii"))
-    except (UnicodeDecodeError, ValueError) as error:
+        # Unlike bytes.fromhex(), unhexlify rejects embedded whitespace.
+        return binascii.unhexlify(encoded)
+    except (binascii.Error, ValueError) as error:
         raise ValueError("invalid hexadecimal RT payload") from error
 
 
