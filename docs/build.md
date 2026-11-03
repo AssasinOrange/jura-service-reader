@@ -42,3 +42,31 @@ The OLED first shows the identity stage. It displays the PIN fields only when
 the machine replies with the exact verified identity `EF658M V15.26` and the
 RT reply passes format and packed-BCD checks. The USB serial monitor at 115200
 baud carries additional diagnostic text.
+
+## Reproducible command-line builds
+
+CI uses Arduino CLI 1.5.1, Arduino AVR core 1.8.6 and the library versions below.
+From the repository root, with Arduino CLI installed:
+
+```sh
+arduino-cli core update-index
+arduino-cli core install arduino:avr@1.8.6
+arduino-cli lib install --no-deps "Adafruit BusIO@1.17.4" "Adafruit GFX Library@1.13.0" "Adafruit SSD1306@2.5.17"
+arduino-cli compile --fqbn arduino:avr:mega:cpu=atmega2560 firmware/JuraPinReader
+arduino-cli compile --fqbn arduino:avr:mega:cpu=atmega2560 capture/JuraFullCapture/JuraFullCapture
+```
+
+These commands compile only; they do not upload firmware or contact a machine.
+The Actions workflow runs on pushes and pull requests and can also be started
+from **Actions → test → Run workflow**. It runs Python tests on 3.10 and 3.13
+and the C++ protocol tests with address/undefined-behaviour sanitizers.
+
+To run the C++ tests locally with a suitable GCC installation:
+
+```sh
+g++ -std=c++11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_protocol_header.cpp -o protocol-test
+./protocol-test
+```
+
+Passing host tests and compilation are software checks. Physical operation
+still depends on the wiring and the one verified controller profile.

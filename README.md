@@ -1,5 +1,7 @@
 # Jura Service Reader
 
+[![Tests and firmware builds](https://github.com/AssasinOrange/jura-service-reader/actions/workflows/test.yml/badge.svg)](https://github.com/AssasinOrange/jura-service-reader/actions/workflows/test.yml)
+
 A tested, read-only Arduino interface for the TTL service port on a Jura
 GIGA X8c Professional. It identifies the controller, reads the verified
 settings block, decodes Jura's four-carrier transport and displays the stored
@@ -50,6 +52,26 @@ capture rig used during the investigation. It preserves each received carrier
 byte with timestamps, UART error flags, sequence numbers and CRC protection.
 The supplied Python tools decode and inspect those captures.
 
+Start with the [capture instructions](capture/JuraFullCapture/README.txt) and
+[offline analysis guide](docs/analysis.md). The extractor preserves raw RT
+replies and reports missing bytes and conflicts. To display PINs, it requires
+an explicit verified-controller profile, complete capture integrity checks,
+and both PIN fields actually present. Its generated files still contain
+private settings even when PIN display is disabled; do not publish them.
+
+## Tests and reproducible builds
+
+From the repository root, run the standard-library Python tests:
+
+```sh
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+GitHub Actions runs these on Python 3.10 and 3.13, runs the C++ protocol tests
+with memory/undefined-behaviour checks, and compiles both Mega sketches. See
+[build.md](docs/build.md) for the pinned Arduino dependencies and compile
+commands. Compilation and synthetic tests do not replace a hardware trial.
+
 ## Wiring
 
 The machine connector looks like RS-232 but the verified interface is TTL.
@@ -90,9 +112,9 @@ same transport while keeping settings at different addresses. The standalone
 reader displays **UNVERIFIED PROFILE** instead of interpreting unknown memory
 as credentials.
 
-Model reports, RT response transcripts and before/after dumps are welcome as
-issues or pull requests. Do not upload a raw dump unless you are happy for its
-settings and counters to become public.
+Model reports and sanitised protocol observations are welcome as issues or
+pull requests. Keep raw dumps, RT reply hex, reconstructed maps and recovered
+credentials private. See [CONTRIBUTING.md](CONTRIBUTING.md) before sharing data.
 
 ## Repository contents
 

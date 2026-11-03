@@ -3,18 +3,64 @@ name: test
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  host-tests:
+  python-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: "3.x"
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
       - name: Python tests
-        run: python -m unittest discover -s tests -p 'test_*.py'
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+
+  cpp-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: C++ protocol tests
         run: |
-          g++ -std=c++11 -Wall -Wextra -Werror tests/test_protocol_header.cpp -o protocol-test
+          g++ -std=c++11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_protocol_header.cpp -o protocol-test
           ./protocol-test
+
+  arduino-builds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Arduino CLI 1.5.1
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/arduino-cli.tar.gz" https://downloads.arduino.cc/arduino-cli/arduino-cli_1.5.1_Linux_64bit.tar.gz
+          echo "28a8e119c498a25607821c36cb2dc49e8463941b261a0d99091baa7bc692dd2b  $RUNNER_TEMP/arduino-cli.tar.gz" | sha256sum --check -
+          tar -xzf "$RUNNER_TEMP/arduino-cli.tar.gz" -C "$RUNNER_TEMP" arduino-cli
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Install pinned core and libraries
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr@1.8.6
+          arduino-cli lib install --no-deps "Adafruit BusIO@1.17.4" "Adafruit GFX Library@1.13.0" "Adafruit SSD1306@2.5.17"
+      - name: Compile standalone reader
+        run: arduino-cli compile --fqbn arduino:avr:mega:cpu=atmega2560 firmware/JuraPinReader
+      - name: Compile capture firmware
+        run: arduino-cli compile --fqbn arduino:avr:mega:cpu=atmega2560 capture/JuraFullCapture/JuraFullCapture
